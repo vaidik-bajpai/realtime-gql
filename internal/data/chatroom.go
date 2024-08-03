@@ -32,3 +32,22 @@ func (m ChatRoomModel) CreateChatRoom(chatRoom *ChatRoom) error {
 
 	return nil
 }
+
+func (m ChatRoomModel) GetAll() ([]*ChatRoom, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	chatRooms, err := m.DB.ChatRoom.FindMany().Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var returnChatRooms []*ChatRoom
+	for _, room := range chatRooms {
+		returnChatRooms = append(returnChatRooms, &ChatRoom{
+			ID:   room.ID,
+			Name: room.Name,
+		})
+	}
+
+	return returnChatRooms, nil
+}

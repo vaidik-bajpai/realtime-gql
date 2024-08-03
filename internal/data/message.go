@@ -5,6 +5,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/vaidik-bajpai/realtime-gql/graph/model"
 	"github.com/vaidik-bajpai/realtime-gql/internal/prisma/db"
 )
 
@@ -43,4 +44,37 @@ func (m MessageModel) CreateMessage(message *Message) error {
 	message.Timestamp = createdMessage.Timestamp
 
 	return nil
+}
+
+func (m MessageModel) GetAChat(chatRoomID int) ([]*model.Message, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	allMessages, err := m.DB.Message.FindMany(
+		db.Message.ChatRoomID.Equals(chatRoomID),
+	).With(
+		db.Message.Sender.Fetch(),
+	).Exec(ctx)
+
+	if err != nil {
+		return nil, errors.New("error fetching messages")
+	}
+
+	var returnMessages []*model.Message
+	for _, message := range allMessages {
+
+		user := message.Sender()
+		returnMessages = append(returnMessages, &model.Message{
+			ID:      message.ID,
+			Content: message.Content,
+			Sender: &model.User{
+				ID:        user.ID,
+				Email:     user.Email,
+				Firstname: user.Firstname,
+				Lastname:  user.Lastname,
+			},
+			Timestamp: message.Timestamp.GoString(),
+		})
+	}
+	return returnMessages, nil
 }

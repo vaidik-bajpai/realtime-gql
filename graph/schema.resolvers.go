@@ -154,12 +154,29 @@ func (r *mutationResolver) Signup(ctx context.Context, input model.NewUser) (*mo
 
 // ChatRooms is the resolver for the chatRooms field.
 func (r *queryResolver) ChatRooms(ctx context.Context) ([]*model.ChatRoom, error) {
-	panic(fmt.Errorf("not implemented: ChatRooms - chatRooms"))
+	chatRooms, err := data.Model.ChatRooms.GetAll()
+	if err != nil {
+		return nil, errors.New("error fetching chatrooms")
+	}
+
+	var returnChatRooms []*model.ChatRoom
+	for _, room := range chatRooms {
+		returnChatRooms = append(returnChatRooms, &model.ChatRoom{
+			ID:   room.ID,
+			Name: room.Name,
+		})
+	}
+
+	return returnChatRooms, nil
 }
 
 // Messages is the resolver for the messages field.
 func (r *queryResolver) Messages(ctx context.Context, chatRoomID string) ([]*model.Message, error) {
-	panic(fmt.Errorf("not implemented: Messages - messages"))
+	chatID, err := strconv.Atoi(chatRoomID)
+	if err != nil {
+		return nil, errors.New("invalid credentials")
+	}
+	return data.Model.Messages.GetAChat(chatID)
 }
 
 // Me is the resolver for the me field.
